@@ -178,6 +178,9 @@ func getLastRelease(filePath string, repo string) (string, error) {
 			if strings.HasSuffix(v.URL, ".nro") {
 				url = v.URL
 				break
+			} else if strings.HasSuffix(v.URL, ".zip") {
+				url = v.URL
+				break
 			}
 		}
 	} else {
@@ -240,7 +243,7 @@ func main() {
 		{"download/", "FlagBrew/Checkpoint", "SDFile/switch/"},
 		{"download/", "mtheall/ftpd", "SDFile/switch/"},
 		{"download/", "Reisyukaku/ReiNXToolkit", "SDFile/switch/"},
-		{"download/", "joel16/NX-Shell", "SDFile/switch/"},
+		{"download/", "Atmosphere-NX/Atmosphere", "SDFile/"},
 	}
 
 	for i := range downloadList {
