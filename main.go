@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 type release struct {
@@ -60,8 +61,16 @@ func downloadFile(filePath string, url string) error {
 	}
 	defer resp.Body.Close()
 
+	// Setup progress bar
+	bar := pb.New(int(resp.ContentLength)).SetUnits(pb.U_BYTES)
+
+	bar.Start()
+	defer bar.Finish()
+
+	reader := bar.NewProxyReader(resp.Body)
+
 	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
+	_, err = io.Copy(out, reader)
 	if err != nil {
 		return err
 	}
@@ -231,7 +240,7 @@ func main() {
 		{"download/", "FlagBrew/Checkpoint", "SDFile/switch/"},
 		{"download/", "mtheall/ftpd", "SDFile/switch/"},
 		{"download/", "Reisyukaku/ReiNXToolkit", "SDFile/switch/"},
-		{"download/", "joel16/NX-Shelll", "SDFile/switch/"},
+		{"download/", "joel16/NX-Shell", "SDFile/switch/"},
 	}
 
 	for i := range downloadList {
