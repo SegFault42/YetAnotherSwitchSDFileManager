@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -144,6 +145,11 @@ func getLastRelease(filePath string, repo string) (string, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		logrus.Error("HTTP Response Status: ", resp.StatusCode, http.StatusText(resp.StatusCode), " for ", repo)
+		return "", errors.New(http.StatusText(resp.StatusCode))
+	}
+
 	// read
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -223,6 +229,9 @@ func main() {
 		{"download/", "switchbrew/nx-hbmenu", "SDFile/"},
 		{"download/", "vgmoose/hb-appstore", "SDFile/"},
 		{"download/", "FlagBrew/Checkpoint", "SDFile/switch/"},
+		{"download/", "mtheall/ftpd", "SDFile/switch/"},
+		{"download/", "Reisyukaku/ReiNXToolkit", "SDFile/switch/"},
+		{"download/", "joel16/NX-Shelll", "SDFile/switch/"},
 	}
 
 	for i := range downloadList {
