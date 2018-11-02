@@ -1,28 +1,21 @@
 package main
 
 import (
-	"archive/zip"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
+	"strconv"
 
 	"github.com/Sirupsen/logrus"
-	pb "gopkg.in/cheggaaa/pb.v1"
+	"github.com/bndr/gojenkins"
 )
 
-type release struct {
-	Assets []asset `json:"assets"`
-}
-
-type asset struct {
-	URL string `json:"browser_download_url"`
+type s_jenkinsCred struct {
+	jenkinsUrl string
+	user       string
+	password   string
 }
 
 func makeDir(dir string) {
@@ -36,228 +29,121 @@ func makeDir(dir string) {
 
 // Create the SD struct folder
 func createFolderStructure() {
-	logrus.Info("Create folder :")
+	logrus.Info("Create folder:")
 
 	makeDir("SDFile/switch")
 	makeDir("SDFile/ReiNX/titles")
 	makeDir("SDFile/tinfoil/nsp")
 	makeDir("download")
+	makeDir("release_list")
 
 	fmt.Println("")
 }
 
-func downloadFile(filePath string, url string) error {
-
-	// Create the file
-	out, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Setup progress bar
-	bar := pb.New(int(resp.ContentLength)).SetUnits(pb.U_BYTES)
-
-	bar.Start()
-	defer bar.Finish()
-
-	reader := bar.NewProxyReader(resp.Body)
-
-	// Write the body to file
-	_, err = io.Copy(out, reader)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func setupLogrus() {
+	Formatter := new(logrus.TextFormatter)
+	Formatter.TimestampFormat = "02-01-2006 15:04:05"
+	Formatter.FullTimestamp = true
+	logrus.SetFormatter(Formatter)
 }
 
-func unZipFile(zipFile string, out string) (err error) {
-	var (
-		dir, file bool = true, true
-	)
+func downloadLatestRelease(jenkins *gojenkins.Jenkins, project string) (err error) {
 
-	logrus.Info("Unzip: ", zipFile)
-
-	zipReader, err := zip.OpenReader(zipFile)
+	logrus.Info(project, ":")
+	logrus.Info("\tGet job ...")
+	build, err := jenkins.GetJob(project)
 	if err != nil {
-		return
+		return err
 	}
 
-	for _, zipFile := range zipReader.Reader.File {
-
-		zippedFile, err := zipFile.Open()
-		if err != nil {
-			return err
-		}
-		defer zippedFile.Close()
-
-		targetDir := out
-		extractedFilePath := filepath.Join(
-			targetDir,
-			zipFile.Name,
-		)
-
-		if zipFile.FileInfo().IsDir() {
-			if dir == true {
-				logrus.Info("Directory Created:")
-			}
-			logrus.Info("\t", extractedFilePath, "/")
-
-			os.MkdirAll(extractedFilePath, zipFile.Mode())
-			file = true
-			dir = false
-		} else {
-			if file == true {
-				logrus.Info("File extracted:")
-			}
-			logrus.Info("\t", zipFile.Name)
-
-			outputFile, err := os.OpenFile(
-				extractedFilePath,
-				os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-				zipFile.Mode(),
-			)
-			if err != nil {
-				return err
-			}
-			defer outputFile.Close()
-
-			_, err = io.Copy(outputFile, zippedFile)
-			if err != nil {
-				return err
-			}
-			file = false
-			dir = true
-		}
+	logrus.Info("\tSearch last successful build ...")
+	lastSuccessBuild, err := build.GetLastSuccessfulBuild()
+	if err != nil {
+		return err
 	}
 
-	fmt.Println("")
+	lastBuild := project + "_" + strconv.Itoa(int(lastSuccessBuild.GetBuildNumber()))
+	if _, err = os.Stat("release_list/" + lastBuild); !os.IsNotExist(err) {
+		logrus.Warn("\t", project, " is up to date")
+		return err
+	}
+
+	artifacts := lastSuccessBuild.GetArtifacts()
+
+	logrus.Info("\tDownload release ...")
+	for _, a := range artifacts {
+		a.SaveToDir("download")
+	}
+	logrus.Info("\tDownload Success !")
+
+	if _, err = os.Create("release_list/" + lastBuild); err != nil {
+		logrus.Error(err)
+	}
+
+	return err
+}
+
+// Setup homebrew to download
+func getHomebrewList() (homebrewList []string) {
+
+	homebrewList = append(homebrewList, "Tinfoil")
+	homebrewList = append(homebrewList, "appstore-nx")
+	homebrewList = append(homebrewList, "ftpd")
+	homebrewList = append(homebrewList, "Checkpoint")
+
 	return
 }
 
-func getLastRelease(filePath string, repo string) (string, error) {
+func getJenkinsCredentials() (result map[string]interface{}) {
 
-	// format url
-	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
-
-	// perform request
-	resp, err := http.Get(url)
+	jsonFile, err := os.Open("credentials.json")
 	if err != nil {
-		return "", err
+		logrus.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer jsonFile.Close()
 
-	if resp.StatusCode != 200 {
-		logrus.Error("HTTP Response Status: ", resp.StatusCode, http.StatusText(resp.StatusCode), " for ", repo)
-		return "", errors.New(http.StatusText(resp.StatusCode))
-	}
+	byteValue, _ := ioutil.ReadAll(jsonFile)
 
-	// read
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
+	json.Unmarshal([]byte(byteValue), &result)
 
-	// get download link
-	r := &release{}
-	err = json.Unmarshal(body, r)
-	if err != nil {
-		return "", err
-	}
-
-	// url as string
-	if len(r.Assets) > 1 {
-		for _, v := range r.Assets {
-			if strings.HasSuffix(v.URL, ".nro") {
-				url = v.URL
-				break
-			} else if strings.HasSuffix(v.URL, ".zip") {
-				url = v.URL
-				break
-			}
-		}
-	} else {
-		url = r.Assets[0].URL
-	}
-
-	// get filename with extension
-	split := strings.Split(url, "/")
-	fileName := split[len(split)-1]
-
-	if _, err := os.Stat(filePath + fileName); os.IsNotExist(err) {
-		// Download the file
-		logrus.Info("Download: ", fileName)
-
-		err = downloadFile(filePath+fileName, url)
-		if err != nil {
-			return "", err
-		}
-
-		fmt.Println("")
-		return filePath + fileName, err
-	}
-
-	return "", err
+	return
 }
 
-func InstallPackages(downloadFolder, repository, installationPath string) (err error) {
+func connectToJenkins(jenkinsCredentials map[string]interface{}) (jenkins *gojenkins.Jenkins) {
 
-	release, err := getLastRelease(downloadFolder, repository)
+	jenkins = gojenkins.CreateJenkins(nil, jenkinsCredentials["jenkins_url"].(string), jenkinsCredentials["user"].(string), jenkinsCredentials["password"].(string))
+
+	_, err := jenkins.Init()
 	if err != nil {
-		return
-	} else if release == "" {
-		logrus.Info(repository, " is up to date")
-	} else if filepath.Ext(release) != ".zip" {
-		split := strings.Split(release, "/")
-		fileName := split[len(split)-1]
-		// move file in folder then create link used for check if package is up to date
-		os.Rename(release, installationPath+fileName)
-		os.Symlink(installationPath+fileName, "download/"+fileName)
-	} else if err = unZipFile(release, installationPath); err != nil {
-		return
+		logrus.Fatal(err)
+	} else {
+		logrus.Info("Successfuly Connected to jenkins !\n\n")
 	}
 
 	return
 }
 
 func main() {
-	Formatter := new(logrus.TextFormatter)
-	Formatter.TimestampFormat = "02-01-2006 15:04:05"
-	Formatter.FullTimestamp = true
-	logrus.SetFormatter(Formatter)
+
+	setupLogrus()
 
 	createFolderStructure()
 
-	downloadList := [][]string{
-		//downloadFolder, repository, installationPAth
-		{"download/", "Reisyukaku/ReiNX", "SDFile/"},
-		{"download/", "switchbrew/nx-hbmenu", "SDFile/"},
-		{"download/", "vgmoose/hb-appstore", "SDFile/"},
-		{"download/", "FlagBrew/Checkpoint", "SDFile/switch/"},
-		{"download/", "mtheall/ftpd", "SDFile/switch/"},
-		{"download/", "Reisyukaku/ReiNXToolkit", "SDFile/switch/"},
-		{"download/", "Atmosphere-NX/Atmosphere", "SDFile/"},
-	}
+	jenkinsCredentials := getJenkinsCredentials()
 
-	for i := range downloadList {
-		InstallPackages(downloadList[i][0], downloadList[i][1], downloadList[i][2])
-	}
+	// Connect to jenkins
+	jenkins := connectToJenkins(jenkinsCredentials)
 
-	err := downloadFile("download/010000000000100D.zip", "https://reinx.guide/u/010000000000100D.zip")
-	if err != nil {
-		logrus.Error(err)
-	} else {
-		err = unZipFile("download/010000000000100D.zip", "SDFile/ReiNX/titles")
+	// Get all homebrew to install
+	homebrewList := getHomebrewList()
+
+	// download all homebrew
+	for idx := range homebrewList {
+		err := downloadLatestRelease(jenkins, homebrewList[idx])
 		if err != nil {
 			logrus.Error(err)
 		}
+
+		fmt.Println("")
 	}
 }
