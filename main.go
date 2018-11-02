@@ -39,7 +39,8 @@ func createFolderStructure() {
 	logrus.Info("Create folder :")
 
 	makeDir("SDFile/switch")
-	makeDir("SDFile/tinfoil")
+	makeDir("SDFile/ReiNX/titles")
+	makeDir("SDFile/tinfoil/nsp")
 	makeDir("download")
 
 	fmt.Println("")
@@ -248,5 +249,15 @@ func main() {
 
 	for i := range downloadList {
 		InstallPackages(downloadList[i][0], downloadList[i][1], downloadList[i][2])
+	}
+
+	err := downloadFile("download/010000000000100D.zip", "https://reinx.guide/u/010000000000100D.zip")
+	if err != nil {
+		logrus.Error(err)
+	} else {
+		err = unZipFile("download/010000000000100D.zip", "SDFile/ReiNX/titles")
+		if err != nil {
+			logrus.Error(err)
+		}
 	}
 }
