@@ -1,12 +1,16 @@
 package main
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/bndr/gojenkins"
@@ -47,32 +51,33 @@ func setupLogrus() {
 	logrus.SetFormatter(Formatter)
 }
 
-func downloadLatestRelease(jenkins *gojenkins.Jenkins, project string) (err error) {
+func downloadLatestRelease(jenkins *gojenkins.Jenkins, project string) (fileName string, err error) {
 
 	logrus.Info(project, ":")
 	logrus.Info("\tGet job ...")
 	build, err := jenkins.GetJob(project)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	logrus.Info("\tSearch last successful build ...")
 	lastSuccessBuild, err := build.GetLastSuccessfulBuild()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	lastBuild := project + "_" + strconv.Itoa(int(lastSuccessBuild.GetBuildNumber()))
 	if _, err = os.Stat("release_list/" + lastBuild); !os.IsNotExist(err) {
 		logrus.Warn("\t", project, " is up to date")
-		return err
+		return "", err
 	}
 
 	artifacts := lastSuccessBuild.GetArtifacts()
 
 	logrus.Info("\tDownload release ...")
-	for _, a := range artifacts {
-		a.SaveToDir("download")
+	_, err = artifacts[0].SaveToDir("download")
+	if err != nil {
+		return "", err
 	}
 	logrus.Info("\tDownload Success !")
 
@@ -80,7 +85,7 @@ func downloadLatestRelease(jenkins *gojenkins.Jenkins, project string) (err erro
 		logrus.Error(err)
 	}
 
-	return err
+	return artifacts[0].FileName, err
 }
 
 // Setup homebrew to download
@@ -90,6 +95,8 @@ func getHomebrewList() (homebrewList []string) {
 	homebrewList = append(homebrewList, "appstore-nx")
 	homebrewList = append(homebrewList, "ftpd")
 	homebrewList = append(homebrewList, "Checkpoint")
+	homebrewList = append(homebrewList, "NX-Shell")
+	homebrewList = append(homebrewList, "ReiNX")
 
 	return
 }
@@ -123,6 +130,81 @@ func connectToJenkins(jenkinsCredentials map[string]interface{}) (jenkins *gojen
 	return
 }
 
+func installInSD(file string) (err error) {
+
+	if strings.HasSuffix(file, ".nro") {
+		err = os.Rename("download/"+file, "SDFile/switch/"+file)
+	} else if strings.Compare(file, "ReiNX.zip") == 0 {
+		unZipFile("download/"+file, "SDFile/")
+	}
+
+	return
+}
+
+func unZipFile(zipFile string, out string) (err error) {
+	var (
+		dir, file bool = true, true
+	)
+
+	logrus.Info("Unzip: ", zipFile)
+
+	zipReader, err := zip.OpenReader(zipFile)
+	if err != nil {
+		return
+	}
+
+	for _, zipFile := range zipReader.Reader.File {
+
+		zippedFile, err := zipFile.Open()
+		if err != nil {
+			return err
+		}
+		defer zippedFile.Close()
+
+		targetDir := out
+		extractedFilePath := filepath.Join(
+			targetDir,
+			zipFile.Name,
+		)
+
+		if zipFile.FileInfo().IsDir() {
+			if dir == true {
+				logrus.Info("Directory Created:")
+			}
+			logrus.Info("\t", extractedFilePath, "/")
+
+			os.MkdirAll(extractedFilePath, zipFile.Mode())
+			file = true
+			dir = false
+		} else {
+			if file == true {
+				logrus.Info("File extracted:")
+			}
+			logrus.Info("\t", zipFile.Name)
+
+			outputFile, err := os.OpenFile(
+				extractedFilePath,
+				os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+				zipFile.Mode(),
+			)
+			if err != nil {
+				return err
+			}
+			defer outputFile.Close()
+
+			_, err = io.Copy(outputFile, zippedFile)
+			if err != nil {
+				return err
+			}
+			file = false
+			dir = true
+		}
+	}
+
+	fmt.Println("")
+	return
+}
+
 func main() {
 
 	setupLogrus()
@@ -139,9 +221,13 @@ func main() {
 
 	// download all homebrew
 	for idx := range homebrewList {
-		err := downloadLatestRelease(jenkins, homebrewList[idx])
+		fileName, err := downloadLatestRelease(jenkins, homebrewList[idx])
 		if err != nil {
-			logrus.Error(err)
+			logrus.Error("\t", err)
+		}
+		// Move file to Sd card folder
+		if err = installInSD(fileName); err != nil {
+			return
 		}
 
 		fmt.Println("")
