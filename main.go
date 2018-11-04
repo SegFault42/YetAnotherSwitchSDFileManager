@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -135,10 +136,38 @@ func installInSD(file string) (err error) {
 	if strings.HasSuffix(file, ".nro") {
 		err = os.Rename("download/"+file, "SDFile/switch/"+file)
 	} else if strings.Compare(file, "ReiNX.zip") == 0 {
-		unZipFile("download/"+file, "SDFile/")
+		if err = unZipFile("download/"+file, "SDFile/"); err != nil {
+			logrus.Error(err)
+		}
 	}
 
 	return
+}
+
+func downloadFile(url string, filePath string) error {
+
+	// Create the file
+	out, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	logrus.Info(filePath, " download success !")
+	return nil
 }
 
 func unZipFile(zipFile string, out string) (err error) {
@@ -219,12 +248,24 @@ func main() {
 	// Get all homebrew to install
 	homebrewList := getHomebrewList()
 
+	// for ReiNX only
+	if _, err := os.Stat("SDFile/ReiNX/titles/010000000000100D"); err != nil {
+		if err := downloadFile("https://reinx.guide/u/010000000000100D.zip", "download/010000000000100D.zip"); err != nil {
+			logrus.Error("download 010000000000100D.zip: ", err)
+		} else {
+			if err = unZipFile("download/010000000000100D.zip", "SDFile/ReiNX/titles/"); err != nil {
+				logrus.Error(err)
+			}
+		}
+	}
+
 	// download all homebrew
 	for idx := range homebrewList {
 		fileName, err := downloadLatestRelease(jenkins, homebrewList[idx])
 		if err != nil {
 			logrus.Error("\t", err)
 		}
+
 		// Move file to Sd card folder
 		if err = installInSD(fileName); err != nil {
 			return
