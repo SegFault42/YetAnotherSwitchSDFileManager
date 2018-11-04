@@ -119,7 +119,12 @@ func getJenkinsCredentials() (result map[string]interface{}) {
 
 func connectToJenkins(jenkinsCredentials map[string]interface{}) (jenkins *gojenkins.Jenkins) {
 
-	jenkins = gojenkins.CreateJenkins(nil, jenkinsCredentials["jenkins_url"].(string), jenkinsCredentials["user"].(string), jenkinsCredentials["password"].(string))
+	// allow anonymous login
+	if jenkinsCredentials["user"].(string) == "" && jenkinsCredentials["password"].(string) == "" {
+		jenkins = gojenkins.CreateJenkins(nil, jenkinsCredentials["jenkins_url"].(string))
+	} else {
+		jenkins = gojenkins.CreateJenkins(nil, jenkinsCredentials["jenkins_url"].(string), jenkinsCredentials["user"].(string), jenkinsCredentials["password"].(string))
+	}
 
 	_, err := jenkins.Init()
 	if err != nil {
