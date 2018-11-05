@@ -52,33 +52,35 @@ func setupLogrus() {
 	logrus.SetFormatter(Formatter)
 }
 
-func downloadLatestRelease(jenkins *gojenkins.Jenkins, project string) (fileName string, err error) {
+func downloadLatestRelease(jenkins *gojenkins.Jenkins, project string) (fileName []gojenkins.Artifact, err error) {
 
 	logrus.Info(project, ":")
 	logrus.Info("\tGet job ...")
 	build, err := jenkins.GetJob(project)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	logrus.Info("\tSearch last successful build ...")
 	lastSuccessBuild, err := build.GetLastSuccessfulBuild()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	lastBuild := project + "_" + strconv.Itoa(int(lastSuccessBuild.GetBuildNumber()))
 	if _, err = os.Stat("release_list/" + lastBuild); !os.IsNotExist(err) {
 		logrus.Warn("\t", project, " is up to date")
-		return "", err
+		return nil, err
 	}
 
 	artifacts := lastSuccessBuild.GetArtifacts()
 
 	logrus.Info("\tDownload release ...")
-	_, err = artifacts[0].SaveToDir("download")
-	if err != nil {
-		return "", err
+	for _, a := range artifacts {
+		_, err = a.SaveToDir("download")
+		if err != nil {
+			return nil, err
+		}
 	}
 	logrus.Info("\tDownload Success !")
 
@@ -86,7 +88,7 @@ func downloadLatestRelease(jenkins *gojenkins.Jenkins, project string) (fileName
 		logrus.Error(err)
 	}
 
-	return artifacts[0].FileName, err
+	return artifacts, err
 }
 
 // Setup homebrew to download
@@ -272,10 +274,13 @@ func main() {
 		}
 
 		// Move file to Sd card folder
-		if err = installInSD(fileName); err != nil {
-			return
+		for _, file := range fileName {
+			if err = installInSD(file.FileName); err != nil {
+				return
+			}
 		}
 
 		fmt.Println("")
 	}
+	os.RemoveAll("download")
 }
