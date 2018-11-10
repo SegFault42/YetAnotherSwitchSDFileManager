@@ -100,6 +100,7 @@ func getHomebrewList() (homebrewList []string) {
 	homebrewList = append(homebrewList, "Checkpoint")
 	homebrewList = append(homebrewList, "NX-Shell")
 	homebrewList = append(homebrewList, "ReiNX")
+	homebrewList = append(homebrewList, "Atmosphere-NX")
 
 	return
 }
@@ -142,7 +143,7 @@ func installInSD(file string) (err error) {
 
 	if strings.HasSuffix(file, ".nro") {
 		err = os.Rename("download/"+file, "SDFile/switch/"+file)
-	} else if strings.Compare(file, "ReiNX.zip") == 0 {
+	} else if strings.HasSuffix(file, "zip") {
 		if err = unZipFile("download/"+file, "SDFile/"); err != nil {
 			logrus.Error(err)
 		}
