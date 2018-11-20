@@ -3,3 +3,5 @@ credentials.json
 vendor
 SDFile
 release_list
+nohup.out
+*.swp
