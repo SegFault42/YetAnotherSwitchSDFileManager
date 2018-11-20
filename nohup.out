@@ -1,1 +1,5 @@
 ./cron.sh:13: permission denied: /usr/local/go
+[master 161cfe8] update SDFile
+ 1 file changed, 1 insertion(+)
+ create mode 100644 nohup.out
+./cron.sh:13: permission denied: /usr/local/go
