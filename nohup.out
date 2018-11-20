@@ -3,3 +3,8 @@
  1 file changed, 1 insertion(+)
  create mode 100644 nohup.out
 ./cron.sh:13: permission denied: /usr/local/go
+[master bf58682] update SDFile
+ 1 file changed, 4 insertions(+)
+To github.com:SegFault42/YetAnotherSwitchSDFileManager.git
+   f0760c8..bf58682  master -> master
+./cron.sh:17: unknown file attribute: 1
