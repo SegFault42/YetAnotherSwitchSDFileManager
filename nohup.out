@@ -8,3 +8,4 @@
 To github.com:SegFault42/YetAnotherSwitchSDFileManager.git
    f0760c8..bf58682  master -> master
 ./cron.sh:17: unknown file attribute: 1
+./cron.sh:13: permission denied: /usr/local/go
