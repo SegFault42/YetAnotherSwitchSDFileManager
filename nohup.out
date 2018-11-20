@@ -14,3 +14,59 @@ To github.com:SegFault42/YetAnotherSwitchSDFileManager.git
 To github.com:SegFault42/YetAnotherSwitchSDFileManager.git
    225ac9c..f685565  master -> master
 ./cron.sh:17: unknown file attribute: 1
+time="20-11-2018 17:12:36" level=info msg="Create folder:"
+time="20-11-2018 17:12:36" level=info msg="\tSDFile/switch folder created"
+time="20-11-2018 17:12:36" level=info msg="\tSDFile/ReiNX/titles folder created"
+time="20-11-2018 17:12:36" level=info msg="\tSDFile/tinfoil/nsp folder created"
+time="20-11-2018 17:12:36" level=info msg="\tdownload folder created"
+time="20-11-2018 17:12:36" level=info msg="\trelease_list folder created"
+
+time="20-11-2018 17:12:36" level=info msg="Successfuly Connected to jenkins !\n\n"
+time="20-11-2018 17:12:36" level=info msg="Tinfoil:"
+time="20-11-2018 17:12:36" level=info msg="\tGet job ..."
+time="20-11-2018 17:12:36" level=info msg="\tSearch last successful build ..."
+time="20-11-2018 17:12:36" level=warning msg="\tTinfoil is up to date"
+
+time="20-11-2018 17:12:36" level=info msg="appstore-nx:"
+time="20-11-2018 17:12:36" level=info msg="\tGet job ..."
+time="20-11-2018 17:12:36" level=info msg="\tSearch last successful build ..."
+time="20-11-2018 17:12:36" level=warning msg="\tappstore-nx is up to date"
+
+time="20-11-2018 17:12:36" level=info msg="ftpd:"
+time="20-11-2018 17:12:36" level=info msg="\tGet job ..."
+time="20-11-2018 17:12:36" level=info msg="\tSearch last successful build ..."
+time="20-11-2018 17:12:36" level=info msg="\tDownload release ..."
+time="20-11-2018 17:12:36" level=info msg="\tDownload Success !"
+
+time="20-11-2018 17:12:36" level=info msg="Checkpoint:"
+time="20-11-2018 17:12:36" level=info msg="\tGet job ..."
+time="20-11-2018 17:12:36" level=info msg="\tSearch last successful build ..."
+time="20-11-2018 17:12:36" level=warning msg="\tCheckpoint is up to date"
+
+time="20-11-2018 17:12:36" level=info msg="NX-Shell:"
+time="20-11-2018 17:12:36" level=info msg="\tGet job ..."
+time="20-11-2018 17:12:36" level=info msg="\tSearch last successful build ..."
+time="20-11-2018 17:12:36" level=warning msg="\tNX-Shell is up to date"
+
+time="20-11-2018 17:12:36" level=info msg="ReiNX:"
+time="20-11-2018 17:12:36" level=info msg="\tGet job ..."
+time="20-11-2018 17:12:36" level=info msg="\tSearch last successful build ..."
+time="20-11-2018 17:12:36" level=warning msg="\tReiNX is up to date"
+
+time="20-11-2018 17:12:36" level=info msg="Atmosphere-NX:"
+time="20-11-2018 17:12:36" level=info msg="\tGet job ..."
+time="20-11-2018 17:12:36" level=info msg="\tSearch last successful build ..."
+time="20-11-2018 17:12:36" level=info msg="\tDownload release ..."
+time="20-11-2018 17:12:36" level=info msg="\tDownload Success !"
+time="20-11-2018 17:12:36" level=info msg="Unzip: download/Atmosphere-NX.zip"
+time="20-11-2018 17:12:36" level=info msg="File extracted:"
+time="20-11-2018 17:12:36" level=info msg="\tBCT.ini"
+time="20-11-2018 17:12:36" level=info msg="Directory Created:"
+time="20-11-2018 17:12:36" level=info msg="\tSDFile/atmosphere/"
+time="20-11-2018 17:12:36" level=info msg="\tSDFile/atmosphere/titles/"
+time="20-11-2018 17:12:36" level=info msg="\tSDFile/atmosphere/titles/010000000000000036/"
+time="20-11-2018 17:12:36" level=info msg="File extracted:"
+time="20-11-2018 17:12:36" level=info msg="\tatmosphere/loader.ini"
+time="20-11-2018 17:12:36" level=info msg="\tfusee-secondary.bin"
+
+
