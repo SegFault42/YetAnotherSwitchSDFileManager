@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 echo "Cron" >> /tmp/cron.log
 
 export DEVKITPRO=/opt/devkitpro
