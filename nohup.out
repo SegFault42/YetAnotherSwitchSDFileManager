@@ -70,3 +70,8 @@ time="20-11-2018 17:12:36" level=info msg="\tatmosphere/loader.ini"
 time="20-11-2018 17:12:36" level=info msg="\tfusee-secondary.bin"
 
 
+[master 4900fea] update SDFile
+ 2 files changed, 57 insertions(+), 1 deletion(-)
+To github.com:SegFault42/YetAnotherSwitchSDFileManager.git
+   72eaf95..4900fea  master -> master
+./cron.sh:17: unknown file attribute: 1
