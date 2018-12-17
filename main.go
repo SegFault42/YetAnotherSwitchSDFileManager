@@ -94,7 +94,7 @@ func downloadLatestRelease(jenkins *gojenkins.Jenkins, project string) (fileName
 // Setup homebrew to download
 func getHomebrewList() (homebrewList []string) {
 
-	homebrewList = append(homebrewList, "Tinfoil")
+	homebrewList = append(homebrewList, "Goldleaf")
 	homebrewList = append(homebrewList, "appstore-nx")
 	homebrewList = append(homebrewList, "ftpd")
 	homebrewList = append(homebrewList, "Checkpoint")
